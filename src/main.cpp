@@ -996,20 +996,21 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits)
     return true;
 }
 
+static int64_t nLastUpdate = 0;
+static CBlockIndex* pindexLastBest = NULL;
+
 bool IsInitialBlockDownload()
 {
     LOCK(cs_main);
     if (pindexBest == NULL || nBestHeight < Checkpoints::GetTotalBlocksEstimate())
         return true;
-    static int64_t nLastUpdate;
-    static CBlockIndex* pindexLastBest;
-    if (pindexBest != pindexLastBest)
+
+    if (pindexBest != pindexLastBest || nLastUpdate < GetTime() - 15)
     {
         pindexLastBest = pindexBest;
         nLastUpdate = GetTime();
     }
-    return (GetTime() - nLastUpdate < 15 &&
-            pindexBest->GetBlockTime() < GetTime() - 8 * 60 * 60);
+    return pindexBest->GetBlockTime() < GetTime() - 8 * 60 * 60;
 }
 
 void static InvalidChainFound(CBlockIndex* pindexNew)
